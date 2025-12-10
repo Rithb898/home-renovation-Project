@@ -12,3 +12,4 @@ yarn.lock
 # Coveralls
 .nyc_output
 coverage
+dist
