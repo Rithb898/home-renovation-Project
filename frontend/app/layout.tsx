@@ -1,9 +1,9 @@
-import Navbar from '@/components/Navbar';
-import './globals.css';
+import Navbar from "@/components/Navbar";
+import "./globals.css";
 
 export const metadata = {
-  title: 'Huelip Renovations',
-  description: 'Modern home renovations.',
+  title: "Huelip Renovations",
+  description: "Modern home renovations.",
 };
 
 export default function RootLayout({
@@ -13,7 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="antialiased bg-white">
+      <body className="bg-white antialiased">
         {/* <Navbar /> */}
         {children}
       </body>
