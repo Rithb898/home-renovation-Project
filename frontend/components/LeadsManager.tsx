@@ -12,6 +12,10 @@ import {
   FiSearch,
   FiMapPin,
   FiXCircle,
+  FiEdit2,
+  FiTrash2,
+  FiEye,
+  FiX,
 } from "react-icons/fi";
 import { FaPinterest, FaGoogle, FaInstagram, FaFacebook } from "react-icons/fa";
 
@@ -68,6 +72,9 @@ const LeadsManager = () => {
   const [expandedUpdate, setExpandedUpdate] = useState<string | null>(null);
   const [expandedLead, setExpandedLead] = useState<string | null>(null);
   const [expandedImage, setExpandedImage] = useState<string | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
 
   // Filter states
   const [searchLeadId, setSearchLeadId] = useState("");
@@ -255,17 +262,59 @@ const LeadsManager = () => {
     },
   ];
 
+  // Calculate dynamic tab counts based on actual leads
+  const getTabCount = (tabName: string) => {
+    switch (tabName) {
+      case "All Leads":
+        return dummyLeads.length;
+      case "Huelip Leads":
+        return dummyLeads.filter((lead) => lead.source === "Pinterest").length;
+      case "Facebook/ Instagram Leads":
+        return dummyLeads.filter(
+          (lead) => lead.source === "Facebook" || lead.source === "Instagram"
+        ).length;
+      case "Google Leads":
+        return dummyLeads.filter((lead) => lead.source === "Google").length;
+      case "Self Leads":
+        return 0; // No self leads in current data
+      default:
+        return 0;
+    }
+  };
+
   const tabs = [
-    { name: "All Leads", count: 5 },
-    { name: "Huelip Leads", count: 2 },
-    { name: "Facebook/ Instagram Leads", count: 1 },
-    { name: "Google Leads", count: 1 },
-    { name: "Self Leads", count: 1 },
+    { name: "All Leads", count: getTabCount("All Leads") },
+    { name: "Huelip Leads", count: getTabCount("Huelip Leads") },
+    { name: "Facebook/ Instagram Leads", count: getTabCount("Facebook/ Instagram Leads") },
+    { name: "Google Leads", count: getTabCount("Google Leads") },
+    { name: "Self Leads", count: getTabCount("Self Leads") },
   ];
 
-  // Filtered leads based on search criteria
+  // Filtered leads based on search criteria and active tab (source)
   const filteredLeads = useMemo(() => {
     return dummyLeads.filter((lead) => {
+      // Tab-based source filtering
+      let matchesTab = true;
+      switch (activeTab) {
+        case "All Leads":
+          matchesTab = true;
+          break;
+        case "Huelip Leads":
+          matchesTab = lead.source === "Pinterest"; // Huelip uses Pinterest as source
+          break;
+        case "Facebook/ Instagram Leads":
+          matchesTab = lead.source === "Facebook" || lead.source === "Instagram";
+          break;
+        case "Google Leads":
+          matchesTab = lead.source === "Google";
+          break;
+        case "Self Leads":
+          matchesTab = false; // No self leads in current data
+          break;
+        default:
+          matchesTab = true;
+      }
+
       const matchesLeadId = lead.leadId
         .toLowerCase()
         .includes(searchLeadId.toLowerCase());
@@ -285,6 +334,7 @@ const LeadsManager = () => {
         searchCategory === "" || lead.category === searchCategory;
 
       return (
+        matchesTab &&
         matchesLeadId &&
         matchesName &&
         matchesBudget &&
@@ -295,6 +345,7 @@ const LeadsManager = () => {
     });
   }, [
     dummyLeads,
+    activeTab,
     searchLeadId,
     searchName,
     searchBudget,
@@ -321,13 +372,13 @@ const LeadsManager = () => {
   const getSourceIcon = (source: string) => {
     switch (source) {
       case "Pinterest":
-        return <FaPinterest />;
+        return <img src="logo.png" alt="logo"/>;
       case "Google":
-        return <FaGoogle />;
+        return <img src="google.png" alt="google" />;
       case "Instagram":
-        return <FaInstagram />;
+        return <img src="instagram.png" alt="instagram" />;
       case "Facebook":
-        return <FaFacebook />;
+        return <img src="facebook.png" alt="facebook" />;
       default:
         return <FiSearch />;
     }
@@ -413,8 +464,14 @@ const LeadsManager = () => {
               <FiSettings />
               Leads Config
             </button>
-            <button className="flex items-center gap-2 rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700">
-              <FiPlus />
+            <button 
+              onClick={() => {
+                setEditingLead(null);
+                setIsEditModalOpen(true);
+              }}
+              className="flex items-center gap-2 rounded bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              <FiEdit2 />
               Add Leads
             </button>
           </div>
@@ -423,7 +480,7 @@ const LeadsManager = () => {
 
       {/* Main Table */}
       <div className="px-6 py-4">
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
+        <div className="rounded-lg border border-gray-200 bg-white shadow">
           {/* Table Header */}
           <div className="border-b border-gray-200 bg-gray-50">
             <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-2 px-4 py-3 text-xs font-bold text-gray-700">
@@ -539,7 +596,7 @@ const LeadsManager = () => {
                   {/* Status */}
                   <div>
                     <span
-                      className={`inline-block rounded-full px-3 py-1 text-center text-xs font-semibold ${getStatusStyle(lead.status)}`}
+                      className={`block min-w-[10px] rounded-full px-3 py-1 text-center text-xs font-semibold ${getStatusStyle(lead.status)}`}
                     >
                       {lead.status}
                     </span>
@@ -548,11 +605,11 @@ const LeadsManager = () => {
                   {/* Category */}
                   <div>
                     <span
-                      className={`inline-block rounded px-3 py-1 text-xs font-bold ${
+                      className={`inline-block rounded px-2 py-1 text-xs font-bold ${
                         lead.category === "RESIDENTIAL"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-purple-100 text-purple-700"
-                      }`}
+                      }`} 
                     >
                       {lead.category}
                     </span>
@@ -598,22 +655,60 @@ const LeadsManager = () => {
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded text-sm font-bold ${
                         lead.source === "Pinterest"
-                          ? "bg-red-600 text-white"
+                          ? "text-white"
                           : lead.source === "Google"
-                            ? "border-2 border-blue-500 bg-white text-blue-500"
+                            ? "text-blue-500"
                             : lead.source === "Instagram"
-                              ? "bg-pink-500 text-white"
-                              : "bg-blue-600 text-white"
+                              ? "text-pink-500"
+                              : "text-blue-600"
                       }`}
                     >
                       {getSourceIcon(lead.source)}
                     </div>
-                    <button
-                      className="text-gray-400 transition-colors hover:text-gray-600"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <FiMoreVertical className="text-lg" />
-                    </button>
+                    <div className="relative">
+                      <button
+                        className="text-gray-400 transition-colors hover:text-gray-600"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdownId(openDropdownId === lead.id ? null : lead.id);
+                        }}
+                      >
+                        <FiMoreVertical className="text-lg text-gray-700 cursor-pointer" />
+                      </button>
+                      {openDropdownId === lead.id && (
+                        <div className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-gray-200 bg-white shadow-lg">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingLead(lead);
+                              setIsEditModalOpen(true);
+                              setOpenDropdownId(null);
+                            }}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                          >
+                            <FiEdit2 className="text-blue-500" />
+                            Edit Lead
+                          </button>
+                          <button
+                            onClick={() => toggleLeadExpansion(lead.id)}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                          >
+                            <FiEye className="text-green-500" />
+                            View Details
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdownId(null);
+                            }}
+                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 transition-colors hover:bg-gray-50"
+                          >
+                            <FiTrash2 />
+                            Delete Lead
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -759,6 +854,261 @@ const LeadsManager = () => {
               className="max-h-[90vh] max-w-full rounded-lg object-contain"
               onClick={(e) => e.stopPropagation()}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Edit Lead Modal */}
+      {isEditModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          onClick={() => setIsEditModalOpen(false)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingLead ? `Edit Lead - ${editingLead.leadId}` : 'Edit Lead'}
+              </h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                <FiX className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              <form className="space-y-6">
+                {/* Basic Information */}
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h3 className="mb-4 text-lg font-bold text-gray-900">Basic Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Lead ID
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.leadId || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="L000000"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Name
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.name || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Enter name"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Budget
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.budget || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="RS 0,00,000/-"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Contact Number
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.contactNo || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="+91-XXXXXXXXX"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Status
+                      </label>
+                      <select
+                        defaultValue={editingLead?.status || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="Pending on Client Decision">Pending on Client Decision</option>
+                        <option value="Requirement Ghattored">Requirement Ghattored</option>
+                        <option value="Assigned">Assigned</option>
+                        <option value="Not Interested">Not Interested</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Category
+                      </label>
+                      <select
+                        defaultValue={editingLead?.category || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="RESIDENTIAL">RESIDENTIAL</option>
+                        <option value="COMMERCIAL">COMMERCIAL</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Source
+                      </label>
+                      <select
+                        defaultValue={editingLead?.source || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      >
+                        <option value="Pinterest">Pinterest (Huelip)</option>
+                        <option value="Google">Google</option>
+                        <option value="Instagram">Instagram</option>
+                        <option value="Facebook">Facebook</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Assigned To
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.assignedTo.name || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Enter assignee name"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Site Details */}
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h3 className="mb-4 text-lg font-bold text-gray-900">Site Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.siteDetails?.location || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Enter location"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Pincode
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.siteDetails?.pincode || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Enter pincode"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Project Type
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.siteDetails?.projectType || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="e.g., 1BHK Floor"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Project Floor
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.siteDetails?.projectFloor || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="e.g., 3rd Floor"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Current Condition
+                      </label>
+                      <textarea
+                        defaultValue={editingLead?.siteDetails?.currentCondition || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Describe current condition"
+                        rows={2}
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Requirements
+                      </label>
+                      <textarea
+                        defaultValue={editingLead?.siteDetails?.requirements || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="Enter requirements"
+                        rows={2}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-semibold text-gray-700">
+                        Duration of Project
+                      </label>
+                      <input
+                        type="text"
+                        defaultValue={editingLead?.siteDetails?.duration || ''}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        placeholder="e.g., 6 months"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Last Update */}
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                  <h3 className="mb-4 text-lg font-bold text-gray-900">Last Update</h3>
+                  <div>
+                    <label className="mb-1 block text-sm font-semibold text-gray-700">
+                      Update Details
+                    </label>
+                    <textarea
+                      defaultValue={editingLead?.lastUpdate.full || ''}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                      placeholder="Enter update details with date and time"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 border-t border-gray-200 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      // Handle save logic here
+                      setIsEditModalOpen(false);
+                    }}
+                    className="rounded-lg bg-red-600 px-6 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
