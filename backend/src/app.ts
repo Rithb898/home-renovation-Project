@@ -1,6 +1,8 @@
 import express from "express";
 import type { Application, Request, Response } from "express";
 import cors from "cors";
+import healthcheckroute from "./modules/healthcheck/healthcheck.routes.js";
+import authroutes from "./modules/auth/auth.routes.js";
 
 const app: Application = express();
 
@@ -12,8 +14,7 @@ app.use(
   })
 );
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Welcome to the Home Renovation API");
-});
+app.use("/api/healthcheck", healthcheckroute);
+app.use("/api/auth", authroutes);
 
 export default app;

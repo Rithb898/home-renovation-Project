@@ -13,3 +13,4 @@ yarn.lock
 .nyc_output
 coverage
 dist
+src/prisma/generated
