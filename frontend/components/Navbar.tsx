@@ -40,7 +40,7 @@ const Navbar = () => {
           {/* 1. Logo */}
           <Link href="/" className="flex items-center gap-2 group z-50">
             <span className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Hulip<span className="text-red-600">.</span>
+               <img src="/logo.png" alt="Logo" className="w-12 h-12" />
             </span>
           </Link>
 

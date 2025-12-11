@@ -17,7 +17,7 @@ export default function Login() {
         />
         <div className="absolute inset-0 bg-linear-to-r from-black/60 to-transparent" />
         <div className="absolute bottom-10 left-10 p-6 text-white">
-          <p className="text-3xl font-bold mb-2">"Hulip turned our chaos into comfort."</p>
+          <p className="text-3xl font-bold mb-2">"Huelip turned our chaos into comfort."</p>
           <p className="opacity-90">— The Sarah Jenkins Project</p>
         </div>
       </div>
@@ -28,7 +28,7 @@ export default function Login() {
           
           {/* Logo & Header */}
           <Link href="/" className="inline-block mb-10 text-2xl font-extrabold text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
-            Hulip<span className="text-red-600">.</span>
+            Huelip<span className="text-red-600">.</span>
           </Link>
           
           <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Welcome Back</h1>
