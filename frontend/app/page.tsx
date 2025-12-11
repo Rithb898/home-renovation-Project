@@ -1,9 +1,14 @@
+import Hero from '@/components/Hero';
+import Services from '@/components/Services';
+import Features from '@/components/Features';
 
 
-const HomePage = () => {
+export default function Home() {
   return (
-    <div>HomePage</div>
-  )
+    <main className="min-h-screen">
+      <Hero />
+      <Services />
+      <Features />
+    </main>
+  );
 }
-
-export default HomePage
