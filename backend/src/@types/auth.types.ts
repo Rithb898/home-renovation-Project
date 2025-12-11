@@ -17,3 +17,10 @@ export const loginSchema = z.object({
     .string({ error: "Password is required" })
     .min(6, "Password must be at least 6 characters long"),
 });
+
+export const emailCheckSchema = z.object({
+  email: z
+    .string({ error: "Email is required" })
+    .email("Invalid email format")
+    .min(1, "Email is required"),
+});

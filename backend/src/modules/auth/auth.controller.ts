@@ -1,10 +1,15 @@
 import z from "zod";
 import type { Request, Response } from "express";
 import { auth } from "../../lib/auth.js";
-import { loginSchema, signupSchema } from "../../@types/auth.types.js";
+import {
+  loginSchema,
+  signupSchema,
+  emailCheckSchema,
+} from "../../@types/auth.types.js";
 import { ApiResponse } from "../../utils/api-response.js";
 import { ApiError } from "../../utils/api-error.js";
 import { APIError } from "better-auth";
+import { checkEmailAvailability } from "./auth.service.js";
 
 export const signup = async (req: Request, res: Response) => {
   try {
@@ -17,6 +22,15 @@ export const signup = async (req: Request, res: Response) => {
     }
 
     const parsedData = result.data;
+
+    // Check if email already exists
+    const emailAvailability = await checkEmailAvailability(parsedData.email);
+
+    if (!emailAvailability.available) {
+      return res
+        .status(409)
+        .json(new ApiError(409, "Email already registered"));
+    }
 
     const authResponse = await auth.api.signUpEmail({
       body: {
@@ -93,6 +107,37 @@ export const signin = async (req: Request, res: Response) => {
         .json(new ApiError(statusCode, message, errors));
     }
 
+    return res.status(500).json(new ApiError(500, "Internal Server Error"));
+  }
+};
+
+export const checkEmail = async (req: Request, res: Response) => {
+  try {
+    const result = emailCheckSchema.safeParse(req.body);
+
+    if (!result.success) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Validation Error", result.error.issues));
+    }
+
+    const { email } = result.data;
+
+    const availabilityResult = await checkEmailAvailability(email);
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, availabilityResult, "Email availability checked")
+      );
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res
+        .status(400)
+        .json(new ApiError(400, "Validation Error", error.issues));
+    }
+
+    // Handle database errors without exposing sensitive information
     return res.status(500).json(new ApiError(500, "Internal Server Error"));
   }
 };
