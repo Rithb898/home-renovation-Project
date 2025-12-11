@@ -1,8 +1,72 @@
-import React from "react";
+"use client";
+
+import { useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuthForm } from "@/hooks/use-auth-form";
+import { loginSchema, type LoginFormData } from "@/lib/validation";
+import { apiClient, type ApiError } from "@/lib/api-client";
 
 export default function Login() {
+  const router = useRouter();
+
+  const handleLogin = useCallback(
+    async (values: LoginFormData) => {
+      try {
+        // Call the signin API
+        await apiClient.post("/auth/signin", {
+          email: values.email,
+          password: values.password,
+        });
+
+        // Redirect to dashboard on success
+        router.push("/dashboard");
+      } catch (error) {
+        const apiError = error as ApiError;
+
+        // Handle specific error cases
+        if (apiError.statusCode === 401) {
+          // Invalid credentials
+          setFieldError("email", "Invalid email or password");
+        } else if (apiError.statusCode === 400 && apiError.errors) {
+          // Validation errors from backend
+          apiError.errors.forEach((err) => {
+            const field = err.path?.[0] as keyof LoginFormData;
+            if (field) {
+              setFieldError(field, err.message);
+            }
+          });
+        } else {
+          // Generic error
+          setFieldError(
+            "email",
+            apiError.message || "An error occurred. Please try again.",
+          );
+        }
+      }
+    },
+    [router],
+  );
+
+  const {
+    values,
+    errors,
+    isSubmitting,
+    touched,
+    handleChange,
+    handleBlur,
+    handleSubmit,
+    setFieldError,
+  } = useAuthForm<LoginFormData>({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: loginSchema,
+    onSubmit: handleLogin,
+  });
+
   return (
     <div className="flex min-h-screen bg-white">
       {/* LEFT SIDE: Image (Hidden on mobile) */}
@@ -42,7 +106,8 @@ export default function Login() {
           </p>
 
           {/* Form */}
-          <form className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Email Field */}
             <div>
               <label
                 htmlFor="email"
@@ -54,10 +119,22 @@ export default function Login() {
                 type="email"
                 id="email"
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-700 transition-all focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                value={values.email}
+                onChange={(e) => handleChange("email", e.target.value)}
+                onBlur={() => handleBlur("email")}
+                className={`w-full rounded-xl border px-5 py-4 text-slate-700 transition-all focus:bg-white focus:ring-2 focus:outline-none ${
+                  errors.email && touched.email
+                    ? "border-red-300 bg-red-50 focus:ring-red-500"
+                    : "border-slate-200 bg-slate-50 focus:ring-red-500"
+                }`}
+                disabled={isSubmitting}
               />
+              {errors.email && touched.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
             </div>
 
+            {/* Password Field */}
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <label
@@ -77,15 +154,53 @@ export default function Login() {
                 type="password"
                 id="password"
                 placeholder="••••••••"
-                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-5 py-4 text-slate-700 transition-all focus:bg-white focus:ring-2 focus:ring-red-500 focus:outline-none"
+                value={values.password}
+                onChange={(e) => handleChange("password", e.target.value)}
+                onBlur={() => handleBlur("password")}
+                className={`w-full rounded-xl border px-5 py-4 text-slate-700 transition-all focus:bg-white focus:ring-2 focus:outline-none ${
+                  errors.password && touched.password
+                    ? "border-red-300 bg-red-50 focus:ring-red-500"
+                    : "border-slate-200 bg-slate-50 focus:ring-red-500"
+                }`}
+                disabled={isSubmitting}
               />
+              {errors.password && touched.password && (
+                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
             </div>
 
             <button
               type="submit"
-              className="w-full transform rounded-full bg-red-600 py-4 font-bold text-white shadow-lg shadow-red-200 transition-all duration-200 hover:bg-red-500 hover:shadow-red-300 active:scale-[0.98]"
+              disabled={isSubmitting}
+              className="w-full transform rounded-full bg-red-600 py-4 font-bold text-white shadow-lg shadow-red-200 transition-all duration-200 hover:bg-red-500 hover:shadow-red-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-600"
             >
-              Sign In
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg
+                    className="h-5 w-5 animate-spin"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  Signing In...
+                </span>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
 
@@ -102,7 +217,10 @@ export default function Login() {
           </div>
 
           {/* Social Auth (Visual Only) */}
-          <button className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-slate-100 py-3 font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50">
+          <button
+            type="button"
+            className="flex w-full items-center justify-center gap-3 rounded-xl border-2 border-slate-100 py-3 font-semibold text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50"
+          >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
               <path
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
