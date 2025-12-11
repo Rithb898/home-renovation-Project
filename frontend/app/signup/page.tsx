@@ -11,11 +11,11 @@ export default function Signup() {
         <div className="w-full max-w-md">
           
           <Link href="/" className="inline-block mb-10 text-2xl font-extrabold text-slate-900 tracking-tight hover:opacity-80 transition-opacity">
-            Hulip<span className="text-red-600">.</span>
+            Huelip<span className="text-red-600">.</span>
           </Link>
           
           <h1 className="text-3xl font-extrabold text-slate-900 mb-2">Create Account</h1>
-          <p className="text-slate-500 mb-8">Join Hulip to track your renovation progress and manage invoices.</p>
+          <p className="text-slate-500 mb-8">Join Huelip to track your renovation progress and manage invoices.</p>
 
           <form className="space-y-5">
             <div>
@@ -56,7 +56,7 @@ export default function Signup() {
                 className="mt-1 w-5 h-5 text-red-600 border-gray-300 rounded focus:ring-red-500"
               />
               <label htmlFor="terms" className="text-sm text-slate-600">
-                I agree to Hulip's <a href="#" className="text-red-600 hover:underline">Terms of Service</a> and <a href="#" className="text-red-600 hover:underline">Privacy Policy</a>.
+                I agree to Huelip's <a href="#" className="text-red-600 hover:underline">Terms of Service</a> and <a href="#" className="text-red-600 hover:underline">Privacy Policy</a>.
               </label>
             </div>
 
@@ -87,7 +87,7 @@ export default function Signup() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full px-12">
            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-8 rounded-2xl shadow-2xl">
              <h3 className="text-2xl font-bold text-white mb-2">Build Better.</h3>
-             <p className="text-white/90">Join 2,000+ homeowners managing their renovations with Hulip.</p>
+             <p className="text-white/90">Join 2,000+ homeowners managing their renovations with Huelip.</p>
            </div>
         </div>
       </div>

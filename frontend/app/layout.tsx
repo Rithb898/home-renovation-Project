@@ -2,7 +2,7 @@ import Navbar from '@/components/Navbar';
 import './globals.css';
 
 export const metadata = {
-  title: 'Hulip Renovations',
+  title: 'Huelip Renovations',
   description: 'Modern home renovations.',
 };
 
@@ -14,7 +14,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased bg-white">
-        <Navbar />
+        {/* <Navbar /> */}
         {children}
       </body>
     </html>

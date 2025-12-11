@@ -11,7 +11,7 @@ interface HeroProps {
 
 const Hero: React.FC<HeroProps> = ({
   title = "Renovations done right.",
-  subtitle = "Hulip transforms outdated spaces into modern sanctuaries. Expert craftsmanship, transparent pricing, and a timeline you can actually trust.",
+  subtitle = "Huelip transforms outdated spaces into modern sanctuaries. Expert craftsmanship, transparent pricing, and a timeline you can actually trust.",
   primaryCtaText = "Get Free Quote",
   secondaryCtaText = "See Our Work",
 }) => {
