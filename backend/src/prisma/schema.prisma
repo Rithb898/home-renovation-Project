@@ -7,16 +7,82 @@ datasource db {
   provider = "postgresql"
 }
 
+// -------------------------------------------------------- 
+// 1. ENUMS (State Management) 
+// -------------------------------------------------------- 
+
+enum UserRole {
+  ADMIN
+  HOMEOWNER
+  PROFESSIONAL
+  VENDOR
+  SITE_AGENT
+}
+
+enum ProjectStatus {
+  NOT_ASSIGNED
+  ASSIGNED
+  REQUIREMENT_GATHERED
+  ESIMATE_SHARED
+  VISIT_PLANNED
+  PENDING_CLIENT_DECISION
+  ON_HOLD
+  NOT_INTERESTED
+  QUOTATION_APPROVED
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  REVISION_REQUESTED
+  ACCEPTED
+  REJECTED
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED // Waiting for approval
+  APPROVED // Triggers payout 
+  REJECTED // Needs rework
+}
+
+enum PaymentStatus {
+  PENDING
+  HELD_IN_ESCROW
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum TransactionType {
+  DEPOSIT // Client funds wallet 
+  MILESTONE_PAYOUT // Escrow to Profecsional per milestone
+  FINAL_PAYOUT // Final payment to Professional 
+  RETENTION_PAYOUT // Final 15% release 
+  REFUND
+  PLATFORM_FEE
+}
+
+// -------------------------------------------------------- 
+// 2. USER & AUTHENTICATION 
+// --------------------------------------------------------
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean   @default(false)
-  image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  sessions      Session[]
-  accounts      Account[]
+  id                  String               @id
+  name                String
+  email               String
+  emailVerified       Boolean              @default(false)
+  image               String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  sessions            Session[]
+  accounts            Account[]
+  homeownerProfile    HomeownerProfile?
+  professionalProfile ProfessionalProfile?
+  vendorProfile       VendorProfile?
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+  sentMessages        Message[]         @relation("Sender")
 
   @@unique([email])
   @@map("user")
@@ -68,4 +134,298 @@ model Verification {
 
   @@index([identifier])
   @@map("verification")
+}
+
+model HomeownerProfile {
+  id       String    @id @default(uuid())
+  userId   String    @unique
+  user     User      @relation(fields: [userId], references: [id])
+  address  String?
+  // Relations 
+  projects Project[]
+}
+
+model ProfessionalProfile {
+  id                String             @id @default(uuid())
+  userId            String             @unique
+  user              User               @relation(fields: [userId], references: [id])
+  // Discovery Filters [Step 2] 
+  businessName      String
+  city              String
+  pincode           String
+  experienceYears   Int
+  styles            String[] // ["Minimalist", "Modern"] (JSON array in Postgres) 
+  budgetRange       String // e.g., "5L - 20L" 
+  rating            Float              @default(0.0)
+  // Bank Details for Payouts 
+  bankAccountNumber String?
+  ifscCode          String?
+  // Relations 
+  projects          Project[] // Projects they are hired for 
+  quotations        Quotation[]
+  portfolios        PortfolioProject[]
+}
+
+model VendorProfile {
+  id           String        @id @default(uuid())
+  userId       String        @unique
+  user         User          @relation(fields: [userId], references: [id])
+  category     String // e.g., "Tiles", "Paint" 
+  // Relations 
+  vendorQuotes VendorQuote[]
+}
+
+// -------------------------------------------------------- 
+// 3. PROJECT & DISCOVERY 
+// -------------------------------------------------------- 
+model Project {
+  id             String               @id @default(uuid())
+  title          String
+  description    String
+  status         ProjectStatus        @default(NOT_ASSIGNED)
+  // Requirements [Step 1] 
+  propertyType   String // Apartment, Villa 
+  city           String
+  address        String?
+  budget         Decimal
+  // Relations 
+  homeownerId    String
+  homeowner      HomeownerProfile     @relation(fields: [homeownerId], references: [id])
+  professionalId String?
+  professional   ProfessionalProfile? @relation(fields: [professionalId], references: [id])
+  // Modules 
+  siteVisits     SiteVisit[]
+  quotations     Quotation[]
+  contract       Contract?
+  escrowWallet   EscrowWallet?
+  tasks          Task[]
+  snags          Snag[]
+  documents      ProjectDocument[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+}
+
+model SiteVisit {
+  id           String   @id @default(uuid())
+  projectId    String
+  project      Project  @relation(fields: [projectId], references: [id])
+  agentName    String
+  visitDate    DateTime
+  measurements Json? // Room dimensions 
+  notes        String?
+  images       String[] // URLs 
+}
+
+// -------------------------------------------------------- 
+// 4. QUOTATION & ESTIMATION [Step 4] 
+// -------------------------------------------------------- 
+model Quotation {
+  id             String              @id @default(uuid())
+  projectId      String
+  project        Project             @relation(fields: [projectId], references: [id])
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id])
+  version        Int                 @default(1)
+  status         QuoteStatus         @default(DRAFT)
+  totalAmount    Decimal
+  gstAmount      Decimal
+  validUntil     DateTime?
+  // Data 
+  sections       QuoteSection[] // e.g., "Living Room", "Kitchen" 
+  createdAt      DateTime            @default(now())
+}
+
+model QuoteSection {
+  id          String      @id @default(uuid())
+  quotationId String
+  quotation   Quotation   @relation(fields: [quotationId], references: [id])
+  name        String // "Master Bedroom" 
+  items       QuoteItem[]
+}
+
+model QuoteItem {
+  id          String       @id @default(uuid())
+  sectionId   String
+  section     QuoteSection @relation(fields: [sectionId], references: [id])
+  description String
+  unit        String // sqft, nos 
+  quantity    Float
+  rate        Decimal
+  amount      Decimal
+  // Logic: Upon contract sign, these become Tasks 
+}
+
+// -------------------------------------------------------- 
+// 5. CONTRACTS & LEGAL [Step 5 & 6] 
+// -------------------------------------------------------- 
+model Contract {
+  id                   String    @id @default(uuid())
+  projectId            String    @unique
+  project              Project   @relation(fields: [projectId], references: [id])
+  contentUrl           String // PDF link 
+  documentHash         String? // For verification 
+  homeownerSigned      Boolean   @default(false)
+  homeownerSignDate    DateTime?
+  professionalSigned   Boolean   @default(false)
+  professionalSignDate DateTime?
+  aadhaarTxnId         String? // From eSign provider 
+  createdAt            DateTime  @default(now())
+}
+
+// -------------------------------------------------------- 
+// 6. ESCROW & FINANCE [Step 7, 8, 12] 
+// -------------------------------------------------------- 
+model EscrowWallet {
+  id                String        @id @default(uuid())
+  projectId         String        @unique
+  project           Project       @relation(fields: [projectId], references: [id])
+  // Provider Details (Razorpay/Castler) 
+  providerWalletId  String?
+  virtualAccountNo  String?
+  upiVpa            String?
+  // Ledger 
+  totalProjectValue Decimal
+  currentBalance    Decimal       @default(0.0)
+  totalReleased     Decimal       @default(0.0)
+  retentionHeld     Decimal       @default(0.0) // The 15% withheld 
+  transactions      Transaction[]
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  walletId    String
+  wallet      EscrowWallet    @relation(fields: [walletId], references: [id])
+  amount      Decimal
+  type        TransactionType
+  status      PaymentStatus   @default(PENDING)
+  referenceId String? // Bank UTR or Gateway ID 
+  description String?
+  taskId      String? // If linked to a specific task approval 
+  createdAt   DateTime        @default(now())
+}
+
+// -------------------------------------------------------- 
+// 7. EXECUTION & TASK MANAGEMENT [Step 9 & 10] 
+// -------------------------------------------------------- 
+model Task {
+  id              String         @id @default(uuid())
+  projectId       String
+  project         Project        @relation(fields: [projectId], references: [id])
+  title           String // e.g., "False Ceiling Framing" 
+  description     String?
+  status          TaskStatus     @default(PENDING)
+  amount          Decimal // Value of this task 
+  startDate       DateTime?
+  endDate         DateTime?
+  // Evidence [Step 9] 
+  evidences       TaskEvidence[]
+  // Rejection logic [Step 10] 
+  rejectionReason String?
+  approvalDate    DateTime?
+}
+
+model TaskEvidence {
+  id         String   @id @default(uuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id])
+  fileUrl    String // S3 Link (Photo/Video) 
+  fileType   String // "IMAGE" | "VIDEO" 
+  // GPS Validation 
+  latitude   Float
+  longitude  Float
+  capturedAt DateTime @default(now())
+}
+
+// -------------------------------------------------------- 
+// 8. PROCUREMENT [Step 11] 
+// -------------------------------------------------------- 
+model MaterialRequest {
+  id          String @id @default(uuid())
+  projectId   String
+  description String // "50 bags cement" 
+  quantity    Float
+  status      String // PENDING, ORDERED 
+  rfqs        RFQ[]
+}
+
+model RFQ {
+  id            String          @id @default(uuid())
+  materialReqId String
+  materialReq   MaterialRequest @relation(fields: [materialReqId], references: [id])
+  vendorQuotes  VendorQuote[]
+}
+
+model VendorQuote {
+  id           String        @id @default(uuid())
+  rfqId        String
+  rfq          RFQ           @relation(fields: [rfqId], references: [id])
+  vendorId     String
+  vendor       VendorProfile @relation(fields: [vendorId], references: [id])
+  price        Decimal
+  deliveryDate DateTime
+  isSelected   Boolean       @default(false)
+}
+
+// -------------------------------------------------------- 
+// 9. QA & HANDOVER [Step 13 & 14] 
+// -------------------------------------------------------- 
+model Snag {
+  id          String    @id @default(uuid())
+  projectId   String
+  project     Project   @relation(fields: [projectId], references: [id])
+  description String
+  photoUrl    String?
+  status      String // OPEN, RESOLVED 
+  resolvedAt  DateTime?
+}
+
+model ProjectDocument {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  name      String // "Completion Certificate", "Final Invoice" 
+  url       String
+  category  String // HANDOVER, LEGAL, INVOICE 
+}
+
+// -------------------------------------------------------- 
+// 10. SYSTEM UTILITIES 
+// -------------------------------------------------------- 
+model PortfolioProject {
+  id             String              @id @default(uuid())
+  professionalId String
+  professional   ProfessionalProfile @relation(fields: [professionalId], references: [id])
+  title          String
+  description    String
+  images         String[]
+  budget         String
+  isFeatured     Boolean             @default(false) // For Magazine 
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  senderId  String
+  sender    User     @relation("Sender", fields: [senderId], references: [id])
+  projectId String
+  content   String
+  sentAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String // "TASK_APPROVED", "MONEY_RELEASED" 
+  details   Json?
+  timestamp DateTime @default(now())
 }
