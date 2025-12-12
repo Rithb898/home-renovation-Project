@@ -67,7 +67,7 @@ const Navbar = () => {
               Log In
             </Link>
             <Link
-              href="/signup" // Changed to /signup for "Get Started" flow
+              href="/register" // Changed to /signup for "Get Started" flow
               className="rounded-full bg-red-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-200 transition-all duration-300 hover:bg-red-500 hover:shadow-red-300"
             >
               Get Started
@@ -145,7 +145,7 @@ const Navbar = () => {
           </Link>
 
           <Link
-            href="/signup"
+            href="/register"
             onClick={() => setIsOpen(false)}
             className="rounded-full bg-red-600 px-8 py-4 font-bold text-white shadow-xl shadow-red-200"
           >
