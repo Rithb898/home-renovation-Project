@@ -95,7 +95,7 @@ const Hero: React.FC<HeroProps> = ({
             <div className="absolute top-10 right-10 -z-10 h-[80%] w-[80%] rotate-3 transform rounded-[3rem] bg-red-100"></div>
 
             {/* Main Image */}
-            <div className="relative h-full w-full overflow-hidden rounded-4xl shadow-2xl shadow-slate-200/50">
+            <div className="relative h-[500px] w-[600px] overflow-hidden mt-10 rounded-4xl shadow-2xl shadow-slate-200/50">
               <Image
                 src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=2940&auto=format&fit=crop"
                 alt="Bright modern kitchen renovation"

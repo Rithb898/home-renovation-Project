@@ -18,6 +18,7 @@ import {
   FiX,
 } from "react-icons/fi";
 import { FaPinterest, FaGoogle, FaInstagram, FaFacebook } from "react-icons/fa";
+import { BiSolidCalendarCheck } from "react-icons/bi";
 
 // Types
 interface Room {
@@ -47,10 +48,15 @@ interface Lead {
   budget: string;
   contactNo: string;
   status:
-    | "Pending on Client Decision"
-    | "Requirement Ghattored"
+    | "Not Assigned"
     | "Assigned"
-    | "Not Interested";
+    | "Requirement Ghattored"
+    | "Estimate Shared"
+    | "Visit Planned"
+    | "Pending On Client Decision"
+    | "On Hold"
+    | "Not Interested"
+    | "Quotation Approved";
   category: "RESIDENTIAL" | "COMMERCIAL";
   lastUpdate: {
     short: string;
@@ -75,6 +81,10 @@ const LeadsManager = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [followUpLead, setFollowUpLead] = useState<Lead | null>(null);
+  const [followUpDate, setFollowUpDate] = useState("");
+  const [followUpTime, setFollowUpTime] = useState("");
 
   // Filter states
   const [searchLeadId, setSearchLeadId] = useState("");
@@ -92,7 +102,7 @@ const LeadsManager = () => {
       name: "RAVI KUMAR",
       budget: "RS 8,00,000/-",
       contactNo: "+91-XXXXXXXXX",
-      status: "Pending on Client Decision",
+      status: "Pending On Client Decision",
       category: "RESIDENTIAL",
       lastUpdate: {
         short: "Client is deciding how to proceed.",
@@ -356,14 +366,24 @@ const LeadsManager = () => {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case "Pending on Client Decision":
-        return "bg-orange-400 text-white";
-      case "Requirement Ghattored":
-        return "bg-blue-500 text-white";
+      case "Not Assigned":
+        return "bg-gray-500 text-white";
       case "Assigned":
         return "bg-green-500 text-white";
+      case "Requirement Ghattored":
+        return "bg-blue-500 text-white";
+      case "Estimate Shared":
+        return "bg-purple-500 text-white";
+      case "Visit Planned":
+        return "bg-indigo-500 text-white";
+      case "Pending On Client Decision":
+        return "bg-orange-400 text-white";
+      case "On Hold":
+        return "bg-yellow-500 text-white";
       case "Not Interested":
         return "bg-red-600 text-white";
+      case "Quotation Approved":
+        return "bg-teal-500 text-white";
       default:
         return "bg-gray-400 text-white";
     }
@@ -648,9 +668,13 @@ const LeadsManager = () => {
                   <div className="flex items-center gap-2">
                     <button
                       className="flex h-8 w-8 items-center justify-center rounded bg-gray-100 transition-colors hover:bg-gray-200"
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFollowUpLead(lead);
+                        setIsFollowUpModalOpen(true);
+                      }}
                     >
-                      <FiClipboard className="text-sm" />
+                      <BiSolidCalendarCheck className="text-2xl" />
                     </button>
                     <div
                       className={`flex h-8 w-8 items-center justify-center rounded text-sm font-bold ${
@@ -838,7 +862,7 @@ const LeadsManager = () => {
       {/* Image Modal */}
       {expandedImage && (
         <div
-          className="bg-opacity-75 fixed inset-0 z-50 flex items-center justify-center bg-black p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
           onClick={() => setExpandedImage(null)}
         >
           <div className="relative max-h-[90vh] max-w-4xl">
@@ -861,7 +885,7 @@ const LeadsManager = () => {
       {/* Edit Lead Modal */}
       {isEditModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
           onClick={() => setIsEditModalOpen(false)}
         >
           <div
@@ -940,10 +964,15 @@ const LeadsManager = () => {
                         defaultValue={editingLead?.status || ''}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                       >
-                        <option value="Pending on Client Decision">Pending on Client Decision</option>
-                        <option value="Requirement Ghattored">Requirement Ghattored</option>
+                        <option value="Not Assigned">Not Assigned</option>
                         <option value="Assigned">Assigned</option>
+                        <option value="Requirement Ghattored">Requirement Ghattored</option>
+                        <option value="Estimate Shared">Estimate Shared</option>
+                        <option value="Visit Planned">Visit Planned</option>
+                        <option value="Pending On Client Decision">Pending On Client Decision</option>
+                        <option value="On Hold">On Hold</option>
                         <option value="Not Interested">Not Interested</option>
+                        <option value="Quotation Approved">Quotation Approved</option>
                       </select>
                     </div>
                     <div>
@@ -1108,6 +1137,130 @@ const LeadsManager = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Follow-Up Reminder Modal */}
+      {isFollowUpModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm"
+          onClick={() => setIsFollowUpModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border-2 border-gray-300 bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100">
+                  <BiSolidCalendarCheck className="text-2xl text-red-600" />
+                </div>
+                <h2 className="text-xl font-bold text-gray-900">
+                  Add Follow Up Reminder
+                </h2>
+              </div>
+              <button
+                onClick={() => setIsFollowUpModalOpen(false)}
+                className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              >
+                <FiX className="text-2xl" />
+              </button>
+            </div>
+
+            {/* Date and Time Inputs */}
+            <div className="mb-6 grid grid-cols-2 gap-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-gray-900">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={followUpDate}
+                  onChange={(e) => setFollowUpDate(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
+                  placeholder="__ / __ / ____"
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-bold text-gray-900">
+                  Time
+                </label>
+                <input
+                  type="time"
+                  value={followUpTime}
+                  onChange={(e) => setFollowUpTime(e.target.value)}
+                  className="w-full rounded-lg border-2 border-gray-300 px-4 py-2 text-sm focus:border-red-500 focus:outline-none"
+                  placeholder="__ / __ / ____"
+                />
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="mb-6 flex justify-center">
+              <button
+                onClick={() => {
+                  // Handle save logic here
+                  console.log("Follow-up saved:", {
+                    lead: followUpLead?.leadId,
+                    date: followUpDate,
+                    time: followUpTime,
+                  });
+                  setFollowUpDate("");
+                  setFollowUpTime("");
+                  setIsFollowUpModalOpen(false);
+                }}
+                className="rounded-full bg-red-600 px-8 py-2 text-sm font-bold text-white transition-colors hover:bg-red-700"
+              >
+                Save
+              </button>
+            </div>
+
+            {/* Follow Up History */}
+            <div>
+              <h3 className="mb-3 text-center text-lg font-bold text-gray-900">
+                Follow Up History
+              </h3>
+              <div className="overflow-hidden rounded-lg border border-gray-300">
+                {/* Table Header */}
+                <div className="grid grid-cols-2 border-b border-gray-300 bg-gray-100">
+                  <div className="border-r border-gray-300 px-4 py-2 text-center text-sm font-bold text-gray-900">
+                    Date
+                  </div>
+                  <div className="px-4 py-2 text-center text-sm font-bold text-gray-900">
+                    Time
+                  </div>
+                </div>
+                {/* Table Body - Empty rows for now */}
+                <div className="divide-y divide-gray-200 bg-white">
+                  <div className="grid grid-cols-2">
+                    <div className="border-r border-gray-300 px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                    <div className="px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2">
+                    <div className="border-r border-gray-300 px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                    <div className="px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2">
+                    <div className="border-r border-gray-300 px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                    <div className="px-4 py-3 text-center text-sm text-gray-500">
+                      -
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
