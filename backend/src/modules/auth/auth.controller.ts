@@ -10,6 +10,7 @@ import { ApiResponse } from "../../utils/api-response.js";
 import { ApiError } from "../../utils/api-error.js";
 import { APIError } from "better-auth";
 import { checkEmailAvailability } from "./auth.service.js";
+import { fromNodeHeaders } from "better-auth/node";
 
 export const signup = async (req: Request, res: Response) => {
   try {
@@ -111,6 +112,20 @@ export const signin = async (req: Request, res: Response) => {
   }
 };
 
+export const signout = async (req: Request, res: Response) => {
+  try {
+    const authResponse = await auth.api.signOut({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, authResponse, "User logged out successfully"));
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, "Internal Server Error"));
+  }
+};
+
 export const checkEmail = async (req: Request, res: Response) => {
   try {
     const result = emailCheckSchema.safeParse(req.body);
@@ -138,6 +153,22 @@ export const checkEmail = async (req: Request, res: Response) => {
     }
 
     // Handle database errors without exposing sensitive information
+    return res.status(500).json(new ApiError(500, "Internal Server Error"));
+  }
+};
+
+export const userSession = async (req: Request, res: Response) => {
+  try {
+    const session = await auth.api.getSession({
+      headers: fromNodeHeaders(req.headers),
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, session, "User session retrieved successfully")
+      );
+  } catch (error) {
     return res.status(500).json(new ApiError(500, "Internal Server Error"));
   }
 };

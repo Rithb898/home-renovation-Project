@@ -64,7 +64,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
           <div
             className={`flex items-center ${isCollapsed ? "justify-center" : "gap-2"}`}
           >
-            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
               <img
                 src="/logo.png"
                 alt="logo"
@@ -95,7 +95,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 title={isCollapsed ? item.name : ""}
               >
                 <span
-                  className={`text-xl ${activeItem === item.name ? "" : "text-gray-500"} flex-shrink-0`}
+                  className={`text-xl ${activeItem === item.name ? "" : "text-gray-500"} shrink-0`}
                 >
                   {item.icon}
                 </span>
@@ -117,7 +117,7 @@ const Sidebar = ({ isCollapsed, setIsCollapsed }: SidebarProps) => {
                 className={`flex items-center ${isCollapsed ? "justify-center" : "gap-4"} rounded-lg px-4 py-3 text-gray-700 transition-all hover:bg-gray-100`}
                 title={isCollapsed ? item.name : ""}
               >
-                <span className="flex-shrink-0 text-xl text-gray-500">
+                <span className="shrink-0 text-xl text-gray-500">
                   {item.icon}
                 </span>
                 {!isCollapsed && (

@@ -141,11 +141,11 @@ export default function Signup() {
   return (
     <div className="flex min-h-screen bg-white">
       {/* LEFT SIDE: Form */}
-      <div className="order-2 flex w-full items-center justify-center p-8 sm:p-12 lg:order-1 lg:w-1/2 lg:p-24">
+      <div className="order-2 flex w-full items-center justify-center lg:order-1 lg:w-1/2">
         <div className="w-full max-w-md">
           <Link
             href="/"
-            className="mb-10 inline-block text-2xl font-extrabold tracking-tight text-slate-900 transition-opacity hover:opacity-80"
+            className="mb-7 inline-block text-2xl font-extrabold tracking-tight text-slate-900 transition-opacity hover:opacity-80"
           >
             Huelip<span className="text-red-600">.</span>
           </Link>
@@ -153,7 +153,7 @@ export default function Signup() {
           <h1 className="mb-2 text-3xl font-extrabold text-slate-900">
             Create Account
           </h1>
-          <p className="mb-8 text-slate-500">
+          <p className="mb-4 text-slate-500">
             Join Huelip to track your renovation progress and manage invoices.
           </p>
 
@@ -162,7 +162,7 @@ export default function Signup() {
             <div>
               <label
                 htmlFor="name"
-                className="mb-2 block text-sm font-semibold text-slate-700"
+                className="mb-2 block font-semibold text-slate-700"
               >
                 Full Name
               </label>
@@ -189,7 +189,7 @@ export default function Signup() {
             <div>
               <label
                 htmlFor="email"
-                className="mb-2 block text-sm font-semibold text-slate-700"
+                className="mb-2 block font-semibold text-slate-700"
               >
                 Email Address
               </label>
@@ -232,7 +232,7 @@ export default function Signup() {
             <div>
               <label
                 htmlFor="password"
-                className="mb-2 block text-sm font-semibold text-slate-700"
+                className="mb-2 block font-semibold text-slate-700"
               >
                 Create Password
               </label>
@@ -257,14 +257,14 @@ export default function Signup() {
 
             {/* Terms Checkbox */}
             <div>
-              <div className="flex items-start gap-3">
+              <div className="flex items-center gap-2">
                 <input
                   type="checkbox"
                   id="terms"
                   checked={values.terms}
                   onChange={(e) => handleChange("terms", e.target.checked)}
                   onBlur={() => handleBlur("terms")}
-                  className={`mt-1 h-5 w-5 rounded text-red-600 focus:ring-red-500 ${
+                  className={`h-5 w-5 rounded text-red-600 focus:ring-red-500 ${
                     errors.terms && touched.terms
                       ? "border-red-300"
                       : "border-gray-300"
@@ -291,7 +291,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full transform rounded-full bg-red-600 py-4 font-bold text-white shadow-lg shadow-red-200 transition-all duration-200 hover:bg-red-500 hover:shadow-red-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-600"
+              className="w-full transform cursor-pointer rounded-full bg-red-600 py-4 font-bold text-white shadow-lg shadow-red-200 transition-all duration-200 hover:bg-red-500 hover:shadow-red-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-red-600"
             >
               {isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
@@ -323,7 +323,7 @@ export default function Signup() {
             </button>
           </form>
 
-          <p className="mt-10 text-center text-slate-600">
+          <p className="mt-5 text-center text-slate-600">
             Already have an account?{" "}
             <Link
               href="/login"

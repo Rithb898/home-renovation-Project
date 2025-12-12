@@ -70,7 +70,7 @@ export default function Login() {
   return (
     <div className="flex min-h-screen bg-white">
       {/* LEFT SIDE: Image (Hidden on mobile) */}
-      <div className="relative hidden w-1/2 bg-slate-50 lg:block">
+      <div className="relative hidden max-h-screen w-1/2 bg-slate-50 lg:block">
         <Image
           src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=2906&auto=format&fit=crop"
           alt="Modern living room"
@@ -88,7 +88,7 @@ export default function Login() {
       </div>
 
       {/* RIGHT SIDE: Form */}
-      <div className="flex w-full items-center justify-center p-8 sm:p-12 lg:w-1/2 lg:p-24">
+      <div className="flex w-full items-center justify-center lg:w-1/2">
         <div className="w-full max-w-md">
           {/* Logo & Header */}
           <Link
@@ -245,7 +245,7 @@ export default function Login() {
           <p className="mt-10 text-center text-slate-600">
             Don't have an account?{" "}
             <Link
-              href="/signup"
+              href="/register"
               className="font-bold text-red-600 hover:text-red-700"
             >
               Start a project
